@@ -86,13 +86,13 @@ def format_config(config: dict):
 
 
 if __name__ == "__main__":
-    conf = __get_config(section="dmc_xy")
+    conf = __get_config(section="scrapping")
     print(conf, "\n\n")
 
     conf = parse_config(conf)
     print(conf, "\n\n")
 
     print(format_config(conf), "\n\n")
-    __set_config(section="dmc_xy", config=format_config(conf))
+    # __set_config(section="scrapping", config=format_config(conf))
 
 

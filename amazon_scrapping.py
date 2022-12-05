@@ -11,6 +11,9 @@ from typing import Sequence
 from langdetect import detect
 
 from consts import ProductType, Sentiment
+import fasttext
+model = fasttext.load_model(file_manager.get_filepath("lang_detect_model/lid.176.ftz"))
+
 
 # LOAD CONFIG
 SCRAPPING_CONFIG = file_manager.get_config(section="scrapping")
@@ -135,8 +138,10 @@ def __format_raw_review_text(raw_review_text: str) -> str:
 
 def __is_review_text_german(review_text: str, suppress_error: bool = False) -> bool:
     """ Returns `True` if text is detected as german. Otherwise, returns False. """
+    global model
     try:
-        if detect(review_text) == "de":
+        #if detect(review_text) == "de":
+        if model.predict(review_text.replace("\n", ""), k=1)[0][0] == "__label__de":
             return True
     except Exception as error:
         if not suppress_error:

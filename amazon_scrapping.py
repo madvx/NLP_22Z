@@ -162,6 +162,7 @@ def filter_and_format_reviews(raw_reviews: Sequence[tuple[str, str, str]],
 
         sentiment = __amazon_stars_str_to_sentiment(stars_str=stars_str)
 
+        review_text = review_text.replace("\n", "")
         reviews.append((review_text, sentiment.value))
 
     return reviews

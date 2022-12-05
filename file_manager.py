@@ -10,7 +10,6 @@ config_filepath = "config.ini"  # config filepath relative to main.py / file_man
 parser = ConfigParser(comment_prefixes='#')
 updater = ConfigUpdater()
 
-
 def get_filepath(file_name):
     """
     returns absolute filepath to file no matter where the main.py script was run from

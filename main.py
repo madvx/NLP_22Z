@@ -1,6 +1,6 @@
 from amazon_scrapping import get_scrapped_reviews, filter_and_format_reviews
 from consts import ProductType, Sentiment
-
+import torch
 
 def main():
 

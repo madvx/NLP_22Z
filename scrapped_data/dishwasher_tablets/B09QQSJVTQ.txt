@@ -1,0 +1,2 @@
+('Jürgen', '5.0 out of 5 stars', '\nTop\n')
+('friedhelm schäfer', '5.0 out of 5 stars', '\nsehr guter Geschäftspartner\n')

@@ -1,0 +1,7 @@
+('Bärbel', '4.0 out of 5 stars', '\nAlles positiv oder anders sehr gut\n')
+('Andreas Schulz', '1.0 out of 5 stars', '\nFür diesen Preis ein gutes Resultat. Habe ein relativ hartes Wasser.  Kann sich mit anderen messen.\n')
+('Pedrowitsch', '5.0 out of 5 stars', '\nEntspricht nicht dem Bild noch geschweige denn den  Anforderungen also eine große Täuschung des Kunden\n')
+('Gandulev', '1.0 out of 5 stars', '\nSehr schnelle Lieferung, Sauberes Geschirr. Alles bestens\n')
+('Kunze', '4.0 out of 5 stars', '\nViele kaputte Tabs und nicht richtig verpackte Tabs in dem Paket.\n')
+('kkb', '5.0 out of 5 stars', '\nIch habe schon oft grosse Packungen Tabs bestellt. Leider sind diese in der Reinigungsleistung sehr schlecht. Ich habe ständig Wasserflecken und das Geschirr wird oft nicht sauber. Schade.\n')
+('Jens Reichler', '1.0 out of 5 stars', '\nRiecht etwas stark und als Bruchware bin ich zufrieden. Werde es immer wieder kaufen\n')

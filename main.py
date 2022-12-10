@@ -1,18 +1,54 @@
+from typing import Iterable
+
+from ordered_set import OrderedSet
+
+import file_manager
 from amazon_scrapping import get_scrapped_reviews, filter_and_format_reviews
 from consts import ProductType, Sentiment
-import torch
+
+
+def print_reviews_statistics(reviews_with_labels: Iterable[tuple[str, Sentiment]]):
+    count = {s.value: 0 for s in Sentiment}
+    for review_text, review_sentiment in reviews_with_labels:
+        count[review_sentiment] += 1
+    for sentiment, _count in count.items():
+        print(f"{_count} reviews with sentiment '{sentiment}'")
+    print(f"Overall {sum(count.values())} reviews")
+
+
+def print_check_config_for_duplicates():
+    products = file_manager.get_config(section="products")
+    for product_type in ProductType:
+        all_listed_products = list(products[product_type.value])
+        dupes = set([product for product in all_listed_products if all_listed_products.count(product) >= 2])
+        if dupes:
+            print(f"\nWARNING: Found duplicates for Product Type '{product_type.value}': ")
+            for dupe in dupes:
+                print(f"\t{dupe}")
+            print()
+
+
 
 def main():
 
+    # check config for duplicates
+    print_check_config_for_duplicates()
+
     # get all reviews for every product
-    reviews_with_labels: list[tuple[str, Sentiment]] = []
+    reviews_with_labels: OrderedSet[tuple[str, Sentiment]] = OrderedSet()
 
     for product in ProductType:
-        raw_reviews = get_scrapped_reviews(product_type=product, inout_folder="scrapped_data")
-        reviews_with_labels.extend(filter_and_format_reviews(raw_reviews=raw_reviews, suppress_errors=True))
+        # GET RAW, NON-FORMATTED REVIEWS
+        raw_reviews: OrderedSet[tuple[str, str, str]] = get_scrapped_reviews(product_type=product,
+                                                                             inout_folder="scrapped_data")
 
-    for review_text, review_sentiment in reviews_with_labels[:3]:
-        print(f"\nREVIEW:\n{review_text}\n\nRESULT: {review_sentiment}")
+        # FILTER REVIEWS (e.g. by language) AND FORMAT TO (text, label)
+        filtered_reviews: OrderedSet[tuple[str, Sentiment]] = filter_and_format_reviews(raw_reviews=raw_reviews,
+                                                                                        suppress_errors=True)
+
+        reviews_with_labels.update(filtered_reviews)
+
+    print_reviews_statistics(reviews_with_labels)
 
 
 if __name__ == "__main__":

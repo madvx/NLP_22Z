@@ -1,5 +1,4 @@
 import ast
-import enum
 import itertools
 import os
 
@@ -7,9 +6,8 @@ import requests
 import file_manager
 
 from bs4 import BeautifulSoup
-from typing import Sequence
-from langdetect import detect
-
+from typing import Sequence, Iterable
+from ordered_set import OrderedSet
 from consts import ProductType, Sentiment
 import fasttext
 model = fasttext.load_model(file_manager.get_filepath("lang_detect_model/lid.176.ftz"))
@@ -87,9 +85,9 @@ def __save_raw_reviews_to_file(relative_path: str, raw_reviews: set[tuple[str, s
             file.write(str(raw_review) + "\n")
 
 
-def __open_raw_reviews_from_file(relative_path: str) -> set[tuple[str, str, str]]:
+def __open_raw_reviews_from_file(relative_path: str) -> OrderedSet[tuple[str, str, str]]:
     abs_path = file_manager.get_filepath(file_name=relative_path)
-    raw_reviews = set()
+    raw_reviews = OrderedSet()
     with open(abs_path, "r", encoding="utf-8") as file:
         for line in file.readlines():
             try:
@@ -101,11 +99,13 @@ def __open_raw_reviews_from_file(relative_path: str) -> set[tuple[str, str, str]
     return raw_reviews
 
 
-def __amazon_raw_web_scrap_to_file(product_type: ProductType, product_ids: Sequence[str], out_folder: str = "scrapped_data"):
+def __amazon_raw_web_scrap_to_file(product_type: ProductType, product_ids: Iterable[str], out_folder: str = "scrapped_data"):
     """ web scraps raw reviews from amazon into file
     if product was already scrapped before, it'll be skipped
     """
+    failed_product_ids: list[str] = []
     product_name = product_type.value
+
 
     # iterates for every product of specified type
     for product_id in product_ids:
@@ -118,6 +118,8 @@ def __amazon_raw_web_scrap_to_file(product_type: ProductType, product_ids: Seque
             print(f"Scrapping page no. {page} for product_id {product_id} (product type: {product_name})...")
             raw_reviews_for_page = __amazon_get_raw_reviews(product_id=product_id, page_number=page)
             if not raw_reviews_for_page:
+                if page == 1:
+                    failed_product_ids.append(product_id)
                 break
             print(f"Scrapped {len(raw_reviews_for_page)} reviews on page no. {page}\n")
             all_raw_reviews.update(raw_reviews_for_page)
@@ -129,6 +131,13 @@ def __amazon_raw_web_scrap_to_file(product_type: ProductType, product_ids: Seque
 
     if product_ids:
         print(f"Scrapped reviews for products: {product_ids} (product_type: {product_name})")
+    if failed_product_ids:
+        print(f"WARNING: NO REVIEWS FOR PRODUCTS:")
+        for product in failed_product_ids:
+            print(f"\t{product}")
+        print("REMOVE THEM FROM THE LIST!\n")
+
+    return failed_product_ids
 
 
 def __format_raw_review_text(raw_review_text: str) -> str:
@@ -150,9 +159,9 @@ def __is_review_text_german(review_text: str, suppress_error: bool = False) -> b
 
 
 def filter_and_format_reviews(raw_reviews: Sequence[tuple[str, str, str]],
-                              suppress_errors: bool = False) -> list[tuple[str, Sentiment]]:
+                              suppress_errors: bool = False) -> OrderedSet[tuple[str, Sentiment]]:
     """ filters reviews to only be in proper german lanugage, converts start rating to Sentiment value """
-    reviews = []
+    reviews = OrderedSet()
     for raw_review in raw_reviews:
         author, stars_str, raw_review_text = raw_review
 
@@ -163,19 +172,20 @@ def filter_and_format_reviews(raw_reviews: Sequence[tuple[str, str, str]],
         sentiment = __amazon_stars_str_to_sentiment(stars_str=stars_str)
 
         review_text = review_text.replace("\n", "")
-        reviews.append((review_text, sentiment.value))
+        reviews.add((review_text, sentiment.value))
 
     return reviews
 
 
-def get_scrapped_reviews(product_type: ProductType, inout_folder: str = "scrapped_data"):
+def get_scrapped_reviews(product_type: ProductType, inout_folder: str = "scrapped_data"
+                         ) -> OrderedSet[tuple[str, str, str]]:
     """ Gets scrapped raw review data for every `product_id` in config file of specified `ProductType`.
     If data was previously scrapped for given `product_id` - i.e. file containing raw reviews exists for `product_id` -
     it will be read from that file instead.
     """
 
     # get all product_ids, for which review data must be scrapped
-    all_product_ids = PRODUCTS[product_type.value]
+    all_product_ids: OrderedSet = OrderedSet(PRODUCTS[product_type.value])
 
     # get all product_ids, for which review data is already scrapped and cached
     product_reviews_data_path = file_manager.get_filepath(f"{inout_folder}/{product_type.value}")
@@ -183,17 +193,18 @@ def get_scrapped_reviews(product_type: ProductType, inout_folder: str = "scrappe
     done_product_ids = set([f[:-4] for f in files if f[-4:] == ".txt"])
 
     # remove already done from all products
-    todo_product_ids = all_product_ids - done_product_ids
+    todo_product_ids = set(all_product_ids) - done_product_ids
 
     # make new scrapped data for todo_product_ids
-    __amazon_raw_web_scrap_to_file(product_type=product_type, product_ids=todo_product_ids, out_folder=inout_folder)
+    failed_product_ids = __amazon_raw_web_scrap_to_file(product_type=product_type, product_ids=todo_product_ids, out_folder=inout_folder)
+
+    all_product_ids -= OrderedSet(failed_product_ids)
 
     # get and return raw data for all products of given type
-    all_reviews = []
+    all_reviews = OrderedSet()
     for product_id in all_product_ids:
         reviews = __open_raw_reviews_from_file(relative_path=f"{inout_folder}/{product_type.value}/{product_id}.txt")
-        all_reviews.extend(list(reviews))
-
+        all_reviews.update(reviews)
     return all_reviews
 
 
@@ -202,11 +213,19 @@ def get_scrapped_reviews(product_type: ProductType, inout_folder: str = "scrappe
 
 if __name__ == "__main__":
 
-    # retrieving raw review data (gets from file if already scrapped and cached)
-    _reviews = get_scrapped_reviews(product_type=ProductType.COLOR_WASHING_POWDER)
-    print(_reviews)
+    # THIS PRINTS QUOTED AMAZON PRODUCT IDS SEPARATED BY COMMA (for config.ini)
 
-    # filtering and formatting reviews
-    _filtered_reviews = filter_and_format_reviews(raw_reviews=_reviews, suppress_errors=True)
-    print(_filtered_reviews)
+    urls_str = """
+    https://www.amazon.de/Emsa-515615-Isolierbecher-genie%C3%9Fen-Verschluss/dp/B00VE3I2UW/ref=sr_1_5?keywords=Thermobecher&qid=1670686172&sr=8-5
+    https://www.amazon.de/Thermobecher-Ersatzdeckel-Isolierbecher-Thermoisolierbecher-Kaffeebecher/dp/B0792S8YK7/ref=sr_1_6?keywords=Thermobecher&qid=1670686172&sr=8-6
+    """
+
+    urls = urls_str.split('\n')
+    ids = []
+
+    for url in urls:
+        _b = url.find("dp/")
+        _id = url[_b:]
+        _id = _id[3:_id.rfind("/")]
+        print(f""""{_id}", """, end="")
 

@@ -7,6 +7,19 @@ from amazon_scrapping import get_scrapped_reviews, filter_and_format_reviews
 from consts import ProductType, Sentiment
 
 
+def split_reviews_by_sentiment(reviews_with_labels: Iterable[tuple[str, Sentiment]]):
+    negative, neutral, positive = OrderedSet(), OrderedSet(), OrderedSet()
+    for review_text, review_sentiment in reviews_with_labels:
+        if review_sentiment == Sentiment.POSITIVE.value:
+            positive.add((review_text, review_sentiment))
+        elif review_sentiment == Sentiment.NEUTRAL.value:
+            neutral.add((review_text, review_sentiment))
+        elif review_sentiment == Sentiment.NEGATIVE.value:
+            negative.add((review_text, review_sentiment))
+        else:
+            print("????")
+    return positive, neutral, negative
+
 def print_reviews_statistics(reviews_with_labels: Iterable[tuple[str, Sentiment]]):
     count = {s.value: 0 for s in Sentiment}
     for review_text, review_sentiment in reviews_with_labels:
@@ -48,7 +61,13 @@ def main():
 
         reviews_with_labels.update(filtered_reviews)
 
+    print(f"TOTAL:")
     print_reviews_statistics(reviews_with_labels)
+
+    positive, neutral, negative = split_reviews_by_sentiment(reviews_with_labels)
+    positive, neutral, negative = positive[:2300], neutral[:2300], negative[:2300]
+    print(f"\nBALANCED:")
+    print_reviews_statistics([*positive, *neutral, *negative])
 
 
 if __name__ == "__main__":

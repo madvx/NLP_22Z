@@ -13,14 +13,9 @@ Additionally, it's needed to run within Python console:
 > import nltk
 > import spacy
 > nltk.download([  
->    "names",  
 >    "stopwords",  
->    "state_union",  
->    "twitter_samples",  
->    "movie_reviews"  
 >    "averaged_perceptron_tagger",  
->    "vader_lexicon",  
 >    "punkt",  
-> ])
+> ])  
 > nlp = spacy.load('de_core_news_sm')
 

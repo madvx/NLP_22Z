@@ -1,6 +1,7 @@
 import ast
 import itertools
 import os
+import re
 
 import requests
 import file_manager
@@ -39,22 +40,23 @@ def __amazon_get_raw_reviews(product_id: str, page_number: int = 1) -> set[tuple
     if page_number == 0:
         raise Exception("Page numbers start from 1 on amazon")
     url = SCRAPPING_CONFIG["reviews_url"].format(product_id=product_id, page_number=page_number)
+    print(url)
     soup = __get_url_soup(url)
-    reviews = set()
+    reviews = OrderedSet()
 
     # TAG AND CLASS NAME OF DATA TO FIND AND SCRAP FROM AMAZON (found using inspect)
     author_tag, author_class_ = "span", "a-profile-name"
     stars_tag, stars_class_ = "span", "a-icon-alt"
     review_tag, review_class_ = "span", "a-size-base review-text review-text-content"
 
-    skip = 2  # first two reviews are always the same and taken from the rest
-    for i, (author, stars, review) in enumerate(zip(soup.find_all(author_tag, class_=author_class_),
-                                                    soup.find_all(stars_tag, class_=stars_class_),
-                                                    soup.find_all(review_tag, class_=review_class_))):
-        if i < skip:
-            continue
-        review_data = (author.get_text(), stars.get_text(), review.get_text())
-        reviews.add(review_data)
+    whole_reviews = soup.find_all("div", id=re.compile("customer_review"))
+    for i, review in enumerate(whole_reviews):
+        author_text = review.find_next(author_tag, class_=author_class_).get_text()
+        starts_text = review.find_next(stars_tag, class_=stars_class_).get_text()
+        review_text = review.find_next(review_tag, class_=review_class_).get_text()
+        if "The media could not be loaded." in review_text:
+            review_text = review_text.replace("The media could not be loaded.", "")
+        reviews.add((author_text, starts_text, review_text))
     return reviews
 
 
@@ -213,19 +215,24 @@ def get_scrapped_reviews(product_type: ProductType, inout_folder: str = "scrappe
 
 if __name__ == "__main__":
 
-    # THIS PRINTS QUOTED AMAZON PRODUCT IDS SEPARATED BY COMMA (for config.ini)
 
-    urls_str = """
-    https://www.amazon.de/Emsa-515615-Isolierbecher-genie%C3%9Fen-Verschluss/dp/B00VE3I2UW/ref=sr_1_5?keywords=Thermobecher&qid=1670686172&sr=8-5
-    https://www.amazon.de/Thermobecher-Ersatzdeckel-Isolierbecher-Thermoisolierbecher-Kaffeebecher/dp/B0792S8YK7/ref=sr_1_6?keywords=Thermobecher&qid=1670686172&sr=8-6
-    """
+    a= __amazon_get_raw_reviews(product_id="B09GjYPKWV", page_number=41)
+    for b in a:
+        print(b)
 
-    urls = urls_str.split('\n')
-    ids = []
-
-    for url in urls:
-        _b = url.find("dp/")
-        _id = url[_b:]
-        _id = _id[3:_id.rfind("/")]
-        print(f""""{_id}", """, end="")
+    # # THIS PRINTS QUOTED AMAZON PRODUCT IDS SEPARATED BY COMMA (for config.ini)
+    #
+    # urls_str = """
+    # https://www.amazon.de/Emsa-515615-Isolierbecher-genie%C3%9Fen-Verschluss/dp/B00VE3I2UW/ref=sr_1_5?keywords=Thermobecher&qid=1670686172&sr=8-5
+    # https://www.amazon.de/Thermobecher-Ersatzdeckel-Isolierbecher-Thermoisolierbecher-Kaffeebecher/dp/B0792S8YK7/ref=sr_1_6?keywords=Thermobecher&qid=1670686172&sr=8-6
+    # """
+    #
+    # urls = urls_str.split('\n')
+    # ids = []
+    #
+    # for url in urls:
+    #     _b = url.find("dp/")
+    #     _id = url[_b:]
+    #     _id = _id[3:_id.rfind("/")]
+    #     print(f""""{_id}", """, end="")
 

@@ -8,30 +8,28 @@ positive_reviews = []
 neutral_reviews = []
 negative_reviews = []
 
-data_files = ["filtered_data/train.csv", "filtered_data/test.csv"]
 
-for file in data_files:
-    # skip first line i.e. read header first and then iterate over each row od csv as a list
-    with open(file, 'r') as read_obj:
-        csv_reader = reader(read_obj)
-        header = next(csv_reader)
-        # Check file as empty
-        if header != None:
-            # Iterate over each row after the header in the csv
-            for row in csv_reader:
-                # row variable is a list that represents a row in csv
-                star_rating = row[1]
-                if star_rating == "0":
-                    positive_reviews.append(row[0])
-                elif star_rating == "1":
-                    neutral_reviews.append(row[0])
-                elif star_rating == "2":
-                    negative_reviews.append(row[0])
+# skip first line i.e. read header first and then iterate over each row od csv as a list
+with open("filtered_data/train.csv", 'r') as read_obj:
+    csv_reader = reader(read_obj)
+    header = next(csv_reader)
+    # Check file as empty
+    if header != None:
+        # Iterate over each row after the header in the csv
+        for row in csv_reader:
+            # row variable is a list that represents a row in csv
+            star_rating = row[1]
+            if star_rating == "0":
+                positive_reviews.append(row[0])
+            elif star_rating == "1":
+                neutral_reviews.append(row[0])
+            elif star_rating == "2":
+                negative_reviews.append(row[0])
 
 # Save corpora to .txt files
 
-# with open('positive_reviews.txt', 'w') as f:
-#     f.write('\n'.join(positive_reviews))
+# with open('negative_reviews.txt', 'w') as f:
+#     f.write('\n'.join(negative_reviews))
 
 
 sentiment_corpora = PlaintextCorpusReader('corpora_nlp22z', '.*')
@@ -146,11 +144,7 @@ for review in train_data_neg:
 
 
 
-from sklearn.naive_bayes import (
-    BernoulliNB,
-    ComplementNB,
-    MultinomialNB,
-)
+
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
@@ -160,9 +154,6 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 
 classifiers = {
-    "BernoulliNB": BernoulliNB(),
-    "ComplementNB": ComplementNB(),
-    "MultinomialNB": MultinomialNB(),
     "KNeighborsClassifier": KNeighborsClassifier(),
     "DecisionTreeClassifier": DecisionTreeClassifier(),
     "RandomForestClassifier": RandomForestClassifier(),

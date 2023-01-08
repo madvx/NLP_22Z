@@ -59,13 +59,17 @@ def main():
         filtered_reviews: OrderedSet[tuple[str, Sentiment]] = filter_and_format_reviews(raw_reviews=raw_reviews,
                                                                                         suppress_errors=True)
 
+        print(f"\nStatistic for product_type: {product}")
+        print_reviews_statistics(filtered_reviews)
+        print()
+
         reviews_with_labels.update(filtered_reviews)
 
     print(f"TOTAL:")
     print_reviews_statistics(reviews_with_labels)
 
     positive, neutral, negative = split_reviews_by_sentiment(reviews_with_labels)
-    positive, neutral, negative = positive[:2300], neutral[:2300], negative[:2300]
+    positive, neutral, negative = positive[:1180], neutral[:1180], negative[:1180]
     print(f"\nBALANCED:")
     print_reviews_statistics([*positive, *neutral, *negative])
 

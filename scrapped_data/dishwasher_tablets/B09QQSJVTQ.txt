@@ -1,2 +1,5 @@
-('Jürgen', '5.0 out of 5 stars', '\nTop\n')
-('friedhelm schäfer', '5.0 out of 5 stars', '\nsehr guter Geschäftspartner\n')
+('Axel Sonnleitner', '5,0 von 5 Sternen', '\nWie immer alles i.O.\n')
+('friedhelm schäfer', '5,0 von 5 Sternen', '\nsehr guter Geschäftspartner\n')
+('Mackert', '1,0 von 5 Sternen', '\nZurück geschickt, war halbe voll.Sehr schlecht.\n')
+('greta', '5,0 von 5 Sternen', '\nDie Spültabs entsprechen nicht dem Foto!Die Dinger sind sehr häßlich und leicht klobig.Am Anfang muss man aufpassen, dass der Spülarm im Geschirrspüler nicht stopt.Löst sich schnell auf und spült alles sehr sauber.Meine Kaufempfehlung!Vor allem bei den Preisen, die jetzt andere Anbieter verlangen.....\n')
+('Jürgen', '5,0 von 5 Sternen', '\nTop\n')

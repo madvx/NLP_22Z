@@ -136,9 +136,8 @@ def extract_features(text):
     return features
 
 
-train_data_pos = []
-train_data_neu = []
-train_data_neg = []
+
+train_data = []
 
 with open('filtered_data/train.csv', 'r', encoding='utf-8') as read_obj:
     csv_reader = reader(read_obj)
@@ -146,33 +145,14 @@ with open('filtered_data/train.csv', 'r', encoding='utf-8') as read_obj:
     if header != None:
         for row in csv_reader:
             star_rating = row[1]
-            if star_rating == "0":
-                train_data_pos.append(row[0])
-            elif star_rating == "1":
-                train_data_neu.append(row[0])
-            elif star_rating == "2":
-                train_data_neg.append(row[0])
-
-train_data = []
-
-# LABELS  = {"POSITIVE": 0, "NEUTRAL": 1, "NEGATIVE": 2}
-
-for review in train_data_pos:
-    evaluate = extract_features(review)
-    if evaluate != None:
-        train_data.append((evaluate, 0))
-
-for review in train_data_neu:
-    evaluate = extract_features(review)
-    if evaluate != None:
-        train_data.append((evaluate, 1))
-
-for review in train_data_neg:
-    evaluate = extract_features(review)
-    if evaluate != None:
-        train_data.append((evaluate, 2))
-
-
+            evaluate = extract_features(row[0])
+            if evaluate != None:
+                if star_rating == "0":
+                    train_data.append((evaluate, 0))
+                elif star_rating == "1":
+                    train_data.append((evaluate, 1))
+                elif star_rating == "2":
+                    train_data.append((evaluate, 2))
 
 
 from sklearn.neighbors import KNeighborsClassifier
@@ -193,9 +173,8 @@ classifiers = {
 }
 
 
-test_data_pos = []
-test_data_neu = []
-test_data_neg = []
+
+test_data = []
 
 with open('filtered_data/test.csv', 'r', encoding='utf-8') as read_obj:
     csv_reader = reader(read_obj)
@@ -203,29 +182,17 @@ with open('filtered_data/test.csv', 'r', encoding='utf-8') as read_obj:
     if header != None:
         for row in csv_reader:
             star_rating = row[1]
-            if star_rating == "0":
-                test_data_pos.append(row[0])
-            elif star_rating == "1":
-                test_data_neu.append(row[0])
-            elif star_rating == "2":
-                test_data_neg.append(row[0])
+            evaluate = extract_features(row[0])
+            if evaluate != None:
+                if star_rating == "0":
+                    test_data.append((evaluate, 0))
+                elif star_rating == "1":
+                    test_data.append((evaluate, 1))
+                elif star_rating == "2":
+                    test_data.append((evaluate, 2))
 
-test_data = []
 
-for review in test_data_pos:
-    evaluate = extract_features(review)
-    if evaluate != None:
-        test_data.append((evaluate, 0))
-
-for review in test_data_neu:
-    evaluate = extract_features(review)
-    if evaluate != None:
-        test_data.append((evaluate, 1))
-
-for review in test_data_neg:
-    evaluate = extract_features(review)
-    if evaluate != None:
-        test_data.append((evaluate, 2))
+        
 
 for name, sklearn_classifier in classifiers.items():
     print(f"{name}...\t", end="")

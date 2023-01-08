@@ -9,18 +9,22 @@ import enum
 import spacy
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, ConfusionMatrixDisplay
 
-BALANCED = False
+BALANCED = True
 GENERATE_UNWANTED_WORDS_CACHE = False
 
 
 class CorpusType(enum.Enum):
+
     POSITIVE_CORPUS = "positive_reviews_balanced.txt" if BALANCED else "positive_reviews.txt"
     NEUTRAL_CORPUS = "neutral_reviews_balanced.txt" if BALANCED else "neutral_reviews.txt"
     NEGATIVE_CORPUS = "negative_reviews_balanced.txt" if BALANCED else "negative_reviews.txt"
 
 
-sentiment_corpora = PlaintextCorpusReader('corpora_nlp22z', '.*')
+TRAIN_PATH = "filtered_data/train_balanced.csv" if BALANCED else "filtered_data/train.csv"
+TEST_PATH = "filtered_data/test_balanced.csv" if BALANCED else "filtered_data/test.csv"
 CACHE_PATH = "cache/pos_cache_balanced.txt" if BALANCED else "cache/pos_cache.txt"
+
+sentiment_corpora = PlaintextCorpusReader('corpora_nlp22z', '.*')
 nlp = spacy.load('de_core_news_sm')
 stopwords = nltk.corpus.stopwords.words("german")
 
@@ -160,7 +164,7 @@ def extract_features(text):
 
 train_data = []
 print("Extracting features for train data...")
-with open('filtered_data/train.csv', 'r', encoding='utf-8') as read_obj:
+with open(TRAIN_PATH, 'r', encoding='utf-8') as read_obj:
     csv_reader = reader(read_obj)
     header = next(csv_reader)
     if header != None:
@@ -186,7 +190,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 print("Extracting features for test data...")
 test_data = []
-with open('filtered_data/test.csv', 'r', encoding='utf-8') as read_obj:
+with open(TEST_PATH, 'r', encoding='utf-8') as read_obj:
     csv_reader = reader(read_obj)
     header = next(csv_reader)
     if header != None:
@@ -205,7 +209,7 @@ with open('filtered_data/test.csv', 'r', encoding='utf-8') as read_obj:
 classifiers = {
     "KNeighborsClassifier": KNeighborsClassifier(),
     "DecisionTreeClassifier": DecisionTreeClassifier(),
-    "RandomForestClassifier": RandomForestClassifier(n_estimators=100),
+    "RandomForestClassifier": RandomForestClassifier(),
     "LogisticRegression": LogisticRegression(max_iter=1000),
     "MLPClassifier": MLPClassifier(max_iter=1000),
     "AdaBoostClassifier": AdaBoostClassifier(),
@@ -221,21 +225,30 @@ for name, sklearn_classifier in classifiers.items():
     test_feats, actual_labels = zip(*test_data)
 
     # fit/predict
-    prediction = sklearn_classifier.fit(train_feats, train_labels).predict(test_feats)
+    model = sklearn_classifier.fit(train_feats, train_labels)
+    prediction_train = model.predict(train_feats)
+    prediction_test = model.predict(test_feats)
 
     # metrics
-    accuracy = accuracy_score(y_true=actual_labels, y_pred=prediction)
-    report = classification_report(y_true=actual_labels, y_pred=prediction)
-    matrix = confusion_matrix(y_true=actual_labels, y_pred=prediction, normalize="pred") # FIXME normalizowac? w jaki sposob?
+    accuracy = accuracy_score(y_true=actual_labels, y_pred=prediction_test)
+    report_train = classification_report(y_true=train_labels, y_pred=prediction_train)
+    report_test = classification_report(y_true=actual_labels, y_pred=prediction_test)
+    matrix_train = confusion_matrix(y_true=train_labels, y_pred=prediction_train)
+    matrix_test = confusion_matrix(y_true=actual_labels, y_pred=prediction_test)
 
     # print accuracy and save results
     print(f"Classified with accuracy {accuracy:.2%}!")
-    results.append((name, accuracy, report, matrix))
+    results.append((name, accuracy, (report_train, report_test), (matrix_train, matrix_test)))
 
 # display results
-input("hit enter to display the results...")
-for name, accuracy, report, matrix in results:
-    print(f"Classification report for {name}:\n{report}\n")
-    disp = ConfusionMatrixDisplay(matrix, display_labels=("POSITIVE", "NEUTRAL", "NEGATIVE")).plot(cmap="Blues")
-    disp.ax_.set_title(name)
+input("hit enter to display the results...\n")
+for name, accuracy, (report_train, report_test), (matrix_train, matrix_test) in results:
+    print(f"Classification report for {name} (test dataset):\n{report_test}\n")
+    disp = ConfusionMatrixDisplay(matrix_test, display_labels=("POSITIVE", "NEUTRAL", "NEGATIVE")).plot()
+    disp.ax_.set_title(f"{name} (test dataset)")
+    plt.show()
+
+    print(f"Classification report for {name} (train dataset):\n{report_train}\n")
+    disp = ConfusionMatrixDisplay(matrix_train, display_labels=("POSITIVE", "NEUTRAL", "NEGATIVE")).plot()
+    disp.ax_.set_title(f"{name} (train dataset)")
     plt.show()

@@ -31,6 +31,9 @@ negative_bigram_finder = nltk.collocations.BigramCollocationFinder.from_words([
 bigram_pos = [w[0] for w in  positive_bigram_finder.ngram_fd.most_common(100)]
 bigram_neu = [w[0] for w in  neutral_bigram_finder.ngram_fd.most_common(100)]
 bigram_neg = [w[0] for w in  negative_bigram_finder.ngram_fd.most_common(100)]
+bigram_pos = [(left.lower(), right.lower()) for left, right in bigram_pos]
+bigram_neu = [(left.lower(), right.lower()) for left, right in bigram_neu]
+bigram_neg = [(left.lower(), right.lower()) for left, right in bigram_neg]
 
 bigram_pos_dict = dict(w for w in  positive_bigram_finder.ngram_fd.most_common(100))
 bigram_neu_dict = dict(w for w in  neutral_bigram_finder.ngram_fd.most_common(100))
@@ -70,19 +73,19 @@ for bigram in common_bigrams:
 
 
 
+# print('POSITIVE BIGRAMS: \n')
+# for element in bigram_pos[:10]:
+#     print(element, bigram_pos_dict[element])
+# print()
+# print('NEUTRAL BIGRAMS: \n')
+# for element in bigram_neu[:10]:
+#     print(element, bigram_neu_dict[element])
+# print()
+# print('NEGATIVE BIGRAMS: \n')
+# for element in bigram_neg[:10]:
+#     print(element, bigram_neg_dict[element])
+# print()
 
-print('POSITIVE BIGRAMS: \n')
-for element in bigram_pos[:10]:
-    print(element, bigram_pos_dict[element])
-print()
-print('NEUTRAL BIGRAMS: \n')
-for element in bigram_neu[:10]:
-    print(element, bigram_neu_dict[element])
-print()
-print('NEGATIVE BIGRAMS: \n')
-for element in bigram_neg[:10]:
-    print(element, bigram_neg_dict[element])
-print()
-
-
+def get_top10_bigrams():
+    return bigram_pos[:10], bigram_neu[:10], bigram_neg[:10]
 

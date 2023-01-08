@@ -9,8 +9,11 @@ import enum
 import spacy
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, ConfusionMatrixDisplay
 
+from bigrams import get_top10_bigrams
+
 BALANCED = True
 GENERATE_UNWANTED_WORDS_CACHE = False
+INCLUDE_BIGRAMS = True
 
 
 class CorpusType(enum.Enum):
@@ -146,11 +149,18 @@ print(f"\tNegative: {top_n_negative}")
 
 
 def extract_features(text):
-    # features = {"pos": 0, "neu": 0, "neg": 0}
     features = {word: 0 for word in
                 list(top_n_positive.keys()) + list(top_n_neutral.keys()) + list(top_n_negative.keys())}
+
+    if INCLUDE_BIGRAMS:
+        top10_bigrams_pos, top10_bigrams_neu, top10_bigrams_neg = get_top10_bigrams()
+        for bigram in (*top10_bigrams_pos, *top10_bigrams_neu, *top10_bigrams_neg):
+            features[bigram] = 0
+
+
     for sentence in nltk.sent_tokenize(text):
-        for word in nltk.word_tokenize(sentence):
+        tokens = nltk.word_tokenize(sentence)
+        for word in tokens:
             word = word.lower()
             if word in top_n_positive:
                 features[word] += 1
@@ -158,6 +168,16 @@ def extract_features(text):
                 features[word] += 1
             if word in top_n_negative:
                 features[word] += 1
+        if INCLUDE_BIGRAMS:
+            for left, right in nltk.bigrams(tokens):
+                bigram = (left.lower(), right.lower())
+                if bigram in top10_bigrams_pos:
+                    features[bigram] += 1
+                if bigram in top10_bigrams_neu:
+                    features[bigram] += 1
+                if bigram in top10_bigrams_neg:
+                    features[bigram] += 1
+
     return features
 
 
@@ -207,12 +227,16 @@ with open(TEST_PATH, 'r', encoding='utf-8') as read_obj:
 
 
 classifiers = {
-    "KNeighborsClassifier": KNeighborsClassifier(),
-    "DecisionTreeClassifier": DecisionTreeClassifier(),
-    "RandomForestClassifier": RandomForestClassifier(),
-    "LogisticRegression": LogisticRegression(max_iter=1000),
-    "MLPClassifier": MLPClassifier(max_iter=1000),
-    "AdaBoostClassifier": AdaBoostClassifier(),
+    # "KNeighborsClassifier": KNeighborsClassifier(),
+    # "DecisionTreeClassifier": DecisionTreeClassifier(),
+
+    "RandomForestClassifier": RandomForestClassifier(n_estimators=1000, max_features="log2",
+                                                     min_samples_leaf=1, min_samples_split=8,
+                                                     max_depth=500),
+
+    # "LogisticRegression": LogisticRegression(max_iter=1000),
+    # "MLPClassifier": MLPClassifier(max_iter=1000),
+    # "AdaBoostClassifier": AdaBoostClassifier(),
 }
 
 print("Begin training and classifying...")

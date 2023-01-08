@@ -68,11 +68,21 @@ for bigram in common_bigrams:
         bigram_pos.remove(bigram) if bigram in bigram_pos else None
         bigram_neu.remove(bigram) if bigram in bigram_neu else None
 
-print('POSITIVE BIGRAMS: \n', bigram_pos)
+
+
+
+print('POSITIVE BIGRAMS: \n')
+for element in bigram_pos[:10]:
+    print(element, bigram_pos_dict[element])
 print()
-print('NEUTRAL BIGRAMS: \n', bigram_neu)
+print('NEUTRAL BIGRAMS: \n')
+for element in bigram_neu[:10]:
+    print(element, bigram_neu_dict[element])
 print()
-print('NEGATIVE BIGRAMS: \n', bigram_neg)
+print('NEGATIVE BIGRAMS: \n')
+for element in bigram_neg[:10]:
+    print(element, bigram_neg_dict[element])
 print()
+
 
 

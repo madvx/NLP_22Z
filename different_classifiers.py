@@ -1,11 +1,17 @@
+import os.path
 from csv import reader
+
+import matplotlib.pyplot as plt
 import nltk
+import numpy
 from nltk.corpus import PlaintextCorpusReader
 import enum
 import spacy
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, ConfusionMatrixDisplay
 
-BALANCED = True
+BALANCED = False
 GENERATE_UNWANTED_WORDS_CACHE = False
+
 
 class CorpusType(enum.Enum):
     POSITIVE_CORPUS = "positive_reviews_balanced.txt" if BALANCED else "positive_reviews.txt"
@@ -34,6 +40,8 @@ def save_unwanted_words(unwanted_words):
 
 def load_unwanted_words():
     unwanted_words = []
+    if not os.path.isfile(CACHE_PATH):
+        return []
     with open(CACHE_PATH, "r", encoding="utf-8") as f:
         for word in f.readlines():
             unwanted_words.append(word.strip())
@@ -61,41 +69,51 @@ def skip_unwanted(word):
 
 
 if GENERATE_UNWANTED_WORDS_CACHE:
-    print("pozytywne")
+    print("Generating unwanted words cache...")
+    print("Looking for unwanted words (positive corpus)...")
     positive_words = [word for word in filter(
         skip_unwanted,
         set(sentiment_corpora.words(CorpusType.POSITIVE_CORPUS.value))
     )]
     save_unwanted_words(unwanted_words_log)
 
-    print("neutralne")
+    print("Looking for unwanted words (neutral corpus)...")
     neutral_words = [word for word in filter(
         skip_unwanted,
         set(sentiment_corpora.words(CorpusType.NEUTRAL_CORPUS.value))
     )]
     save_unwanted_words(unwanted_words_log)
 
-    print("negatywne")
+    print("Looking for unwanted words (negative corpus)...")
     negative_words = [word for word in filter(
         skip_unwanted,
         set(sentiment_corpora.words(CorpusType.NEGATIVE_CORPUS.value))
     )]
     save_unwanted_words(unwanted_words_log)
     exit()
-
 else:
-    positive_words = filter(lambda x: x not in unwanted_words_log,
-                            sentiment_corpora.words(CorpusType.POSITIVE_CORPUS.value))
-    neutral_words = filter(lambda x: x not in unwanted_words_log,
-                           sentiment_corpora.words(CorpusType.NEUTRAL_CORPUS.value))
-    negative_words = filter(lambda x: x not in unwanted_words_log,
-                            sentiment_corpora.words(CorpusType.NEGATIVE_CORPUS.value))
+    print("Filtering unwanted words...")
+    positive_words = sentiment_corpora.words(CorpusType.POSITIVE_CORPUS.value)
+    neutral_words = sentiment_corpora.words(CorpusType.NEUTRAL_CORPUS.value)
+    negative_words = sentiment_corpora.words(CorpusType.NEGATIVE_CORPUS.value)
+    unwanted_words_log = set(unwanted_words_log)
+
+    unwanted_positive_words = unwanted_words_log & set(positive_words)
+    unwanted_neutral_words = unwanted_words_log & set(neutral_words)
+    unwanted_negative_words = unwanted_words_log & set(negative_words)
+
+    positive_words = filter(lambda x: x not in unwanted_positive_words, positive_words)
+    neutral_words = filter(lambda x: x not in unwanted_neutral_words, neutral_words)
+    negative_words = filter(lambda x: x not in unwanted_negative_words, negative_words)
+
+
 
 positive_fd = nltk.FreqDist([w.lower() for w in positive_words])
 neutral_fd = nltk.FreqDist([w.lower() for w in neutral_words])
 negative_fd = nltk.FreqDist([w.lower() for w in negative_words])
 
 # remove duplicates but leaving the most frequent in given set
+print("Removing duplicates from dataset...")
 common_pos_neu = [word for word in (set(positive_fd) & set(neutral_fd))]
 common_pos_neg = [word for word in (set(positive_fd) & set(negative_fd))]
 common_neu_neg = [word for word in (set(neutral_fd) & set(negative_fd))]
@@ -112,33 +130,36 @@ for word in common_words:
     elif neg_freq == max_freq:
         positive_fd.pop(word) if word in positive_fd else None
         neutral_fd.pop(word) if word in neutral_fd else None
-top_100_positive = {word: count for word, count in positive_fd.most_common(10)}
-top_100_neutral = {word: count for word, count in neutral_fd.most_common(10)}
-top_100_negative = {word: count for word, count in negative_fd.most_common(10)}
-print(top_100_positive)
-print(top_100_neutral)
-print(top_100_negative)
+
+n = 100  # really trying not to call this variable n_words
+print(f"Top {n} most common words in each corpus:")
+top_n_positive = {word: count for word, count in positive_fd.most_common(n)}
+top_n_neutral = {word: count for word, count in neutral_fd.most_common(n)}
+top_n_negative = {word: count for word, count in negative_fd.most_common(n)}
+print(f"\tPositive: {top_n_positive}")
+print(f"\tNeutral: {top_n_neutral}")
+print(f"\tNegative: {top_n_negative}")
 
 
 def extract_features(text):
-    features = {"pos": 0, "neu": 0, "neg": 0}
+    # features = {"pos": 0, "neu": 0, "neg": 0}
     features = {word: 0 for word in
-                list(top_100_positive.keys()) + list(top_100_neutral.keys()) + list(top_100_negative.keys())}
+                list(top_n_positive.keys()) + list(top_n_neutral.keys()) + list(top_n_negative.keys())}
     for sentence in nltk.sent_tokenize(text):
         for word in nltk.word_tokenize(sentence):
             word = word.lower()
-            if word in top_100_positive:
+            if word in top_n_positive:
                 features[word] += 1
-            if word in top_100_neutral:
+            if word in top_n_neutral:
                 features[word] += 1
-            if word in top_100_negative:
+            if word in top_n_negative:
                 features[word] += 1
     return features
 
 
 
 train_data = []
-
+print("Extracting features for train data...")
 with open('filtered_data/train.csv', 'r', encoding='utf-8') as read_obj:
     csv_reader = reader(read_obj)
     header = next(csv_reader)
@@ -148,11 +169,11 @@ with open('filtered_data/train.csv', 'r', encoding='utf-8') as read_obj:
             evaluate = extract_features(row[0])
             if evaluate != None:
                 if star_rating == "0":
-                    train_data.append((evaluate, 0))
+                    train_data.append((list(evaluate.values()), 0))
                 elif star_rating == "1":
-                    train_data.append((evaluate, 1))
+                    train_data.append((list(evaluate.values()), 1))
                 elif star_rating == "2":
-                    train_data.append((evaluate, 2))
+                    train_data.append((list(evaluate.values()), 2))
 
 
 from sklearn.neighbors import KNeighborsClassifier
@@ -163,19 +184,8 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 
-classifiers = {
-    "KNeighborsClassifier": KNeighborsClassifier(),
-    "DecisionTreeClassifier": DecisionTreeClassifier(),
-    "RandomForestClassifier": RandomForestClassifier(n_estimators=100),
-    "LogisticRegression": LogisticRegression(),
-    "MLPClassifier": MLPClassifier(max_iter=1000),
-    "AdaBoostClassifier": AdaBoostClassifier(),
-}
-
-
-
+print("Extracting features for test data...")
 test_data = []
-
 with open('filtered_data/test.csv', 'r', encoding='utf-8') as read_obj:
     csv_reader = reader(read_obj)
     header = next(csv_reader)
@@ -185,18 +195,47 @@ with open('filtered_data/test.csv', 'r', encoding='utf-8') as read_obj:
             evaluate = extract_features(row[0])
             if evaluate != None:
                 if star_rating == "0":
-                    test_data.append((evaluate, 0))
+                    test_data.append((list(evaluate.values()), 0))
                 elif star_rating == "1":
-                    test_data.append((evaluate, 1))
+                    test_data.append((list(evaluate.values()), 1))
                 elif star_rating == "2":
-                    test_data.append((evaluate, 2))
+                    test_data.append((list(evaluate.values()), 2))
 
 
-        
+classifiers = {
+    "KNeighborsClassifier": KNeighborsClassifier(),
+    "DecisionTreeClassifier": DecisionTreeClassifier(),
+    "RandomForestClassifier": RandomForestClassifier(n_estimators=100),
+    "LogisticRegression": LogisticRegression(max_iter=1000),
+    "MLPClassifier": MLPClassifier(max_iter=1000),
+    "AdaBoostClassifier": AdaBoostClassifier(),
+}
 
+print("Begin training and classifying...")
+results = []
 for name, sklearn_classifier in classifiers.items():
-    print(f"{name}...\t", end="")
-    classifier = nltk.classify.SklearnClassifier(sklearn_classifier)
-    classifier.train(train_data)
-    accuracy = nltk.classify.accuracy(classifier, test_data)
-    print(f"{accuracy:.2%}")
+    print(f"Training nad classifying with {name}...\t", end="")
+
+    # data format for fit/predict
+    train_feats, train_labels = zip(*train_data)
+    test_feats, actual_labels = zip(*test_data)
+
+    # fit/predict
+    prediction = sklearn_classifier.fit(train_feats, train_labels).predict(test_feats)
+
+    # metrics
+    accuracy = accuracy_score(y_true=actual_labels, y_pred=prediction)
+    report = classification_report(y_true=actual_labels, y_pred=prediction)
+    matrix = confusion_matrix(y_true=actual_labels, y_pred=prediction, normalize="pred") # FIXME normalizowac? w jaki sposob?
+
+    # print accuracy and save results
+    print(f"Classified with accuracy {accuracy:.2%}!")
+    results.append((name, accuracy, report, matrix))
+
+# display results
+input("hit enter to display the results...")
+for name, accuracy, report, matrix in results:
+    print(f"Classification report for {name}:\n{report}\n")
+    disp = ConfusionMatrixDisplay(matrix, display_labels=("POSITIVE", "NEUTRAL", "NEGATIVE")).plot(cmap="Blues")
+    disp.ax_.set_title(name)
+    plt.show()

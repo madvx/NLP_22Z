@@ -64,6 +64,7 @@ def __set_config(section, config):
 def get_config(section: str):
     return parse_config(__get_config(section=section))
 
+
 def parse_config(config: dict[str]):
     """
     parses str-only config to target python data-structures using `ast.literal_eval`

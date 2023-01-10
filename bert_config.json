@@ -1,0 +1,10 @@
+{
+"weights" : [1.0, 1.0, 1.0],
+"train_dataset" : "./csv_data/train.csv",
+"test_dataset" : "./csv_data/test.csv",
+"num_labels" : 3,
+"epochs" : 1,
+"batch_size" : 16,
+"learning_rate" : 5e-5,
+"model_name" : "base"
+}

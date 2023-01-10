@@ -23,3 +23,12 @@ Additionally, it's needed to run within Python console:
 
 ### Documentation  
 Link to Google Docs with final documentation: [LINK](https://docs.google.com/document/d/1FWsgpyKUKIrMwfQum-13OUG3LK8Ly5Dy1hskzDFsiv4/edit#)
+
+
+
+### Bert finetuning
+1. Upload to google colab:
+   1. _bert_config.json_ - provide parameters in this file
+   2. _BERT_finetuning.ipynb_ 
+   3. datasets in .csv format
+2. Run all cells

@@ -25,8 +25,13 @@ Additionally, it's needed to run within Python console:
 Link to Google Docs with final documentation: [LINK](https://docs.google.com/document/d/1FWsgpyKUKIrMwfQum-13OUG3LK8Ly5Dy1hskzDFsiv4/edit#)
 
 
+### Running
+#### Multiple classifiers test
+Run classifiers test with command: `python3 main.py`  
+Generate corpora with command: `python3 main.py -m gen_corpora`  
+Generate unwanted cache (stopwords + nouns) for faster test with command: `python3 main.py -m gen_unwanted_cache`
 
-### Bert finetuning
+#### Bert finetuning
 1. Upload to google colab:
    1. _bert_config.json_ - provide parameters in this file
    2. _BERT_finetuning.ipynb_ 

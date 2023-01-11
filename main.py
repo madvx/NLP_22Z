@@ -7,7 +7,7 @@ import utils
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--mode', default='test_classifiers',
                     choices=['test_classifiers', 'gen_unwanted_cache', 'gen_corpora'], )
-parser.add_argument('-s', '--sim', action="store_true")
+
 
 def main(mode):
     if mode == "test_classifiers":

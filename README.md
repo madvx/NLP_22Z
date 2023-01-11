@@ -15,19 +15,16 @@ Sentiment analysis for German language reviews for products:
 ### Dependencies and requirements
 Required Python version: `Python 3.9`  
 All necessary modules are in requirements.txt, install using: `pip3 install -r requirements.txt`
-
-Linux user should first run this command:  `python3 -m spacy download de_core_news_sm`  
+It's needed to run this command:  `python3 -m spacy download de_core_news_sm`  
   
 Additionally, it's needed to run within Python console:
 ```
 import nltk  
-import spacy  
 nltk.download([  
    "stopwords",  
    "averaged_perceptron_tagger",  
    "punkt",  
 ])  
-nlp = spacy.load('de_core_news_sm')
 ```
 
 
